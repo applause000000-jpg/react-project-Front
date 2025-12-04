@@ -1,0 +1,29 @@
+.react-calendar__tile {
+  font-size: 12px; 
+  padding: 6px;
+  display: flex;
+  align-items: flex-start;  
+  justify-content: flex-start;
+
+}
+.react-calendar__navigation button {
+  font-size: 20px;  
+  font-weight: bold;
+}
+
+
+.react-calendar__month-view__weekdays {
+  font-size: 16px;  
+  font-weight: 600;
+}
+
+
+
+.react-calendar {
+  width: 100%;      
+  max-width: 1200px;   
+}
+.react-calendar__month-view__days__day {
+  height: 120px;  
+}
+

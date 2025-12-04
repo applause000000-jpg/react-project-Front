@@ -38,6 +38,9 @@ function Login(){
     setLoading(true);
     loginService(user)
     .then((response)=>{
+      const { token, username } = response.data;
+      localStorage.setItem("token", token);
+      localStorage.setItem("username", username);
       setCurrentUser(response.data)
       navigate('/home')
     })
