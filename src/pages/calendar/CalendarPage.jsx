@@ -78,17 +78,35 @@ function CalendarPage() {
     }
   };
 
-  const isSameDay = (d1, d2) =>
-    d1.getFullYear() === d2.getFullYear() &&
-    d1.getMonth() === d2.getMonth() &&
-    d1.getDate() === d2.getDate();
+  // const isSameDay = (d1, d2) =>
+  //   d1.getFullYear() === d2.getFullYear() &&
+  //   d1.getMonth() === d2.getMonth() &&
+  //   d1.getDate() === d2.getDate();
+
+
+const toDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+const isSameDay = (a, b) => toDay(a).getTime() === toDay(b).getTime();
+
+const inRange = (date, s) => {
+  const d = toDay(date);
+  const start = toDay(new Date(s.startDate));
+  const end = toDay(new Date(s.endDate));
+  return d >= start && d <= end;
+};
+
+const isStart = (date, s) => isSameDay(toDay(date), toDay(new Date(s.startDate)));
+const isEnd   = (date, s) => isSameDay(toDay(date), toDay(new Date(s.endDate)));
+
+
+
 
   return (
     <div className="container">
       <h2>상세 일정 캘린더</h2>
 
       {/* range 선택 활성화 */}
-      <Calendar
+      {/* <Calendar
       selectRange
       onChange={(value) => {
         setRange(value);
@@ -101,9 +119,9 @@ function CalendarPage() {
           );
           
           return (
-            <div style={{ fontSize: "10px", marginTop: "4px" }}>
+            <div className="tile-container">
               {daySchedules.slice(0, 2).map((s, idx) => (
-                <div
+                <div className="tile-text"
                   key={idx}
                   style={{
                     whiteSpace: "nowrap",
@@ -121,8 +139,45 @@ function CalendarPage() {
           );
         }
       }}
-    />
+    /> */}
 
+<Calendar
+  selectRange
+  onChange={(value) => setRange(value)}
+  value={range}
+  tileContent={({ date, view }) => {
+    if (view !== "month") return null;
+
+    // 해당 날짜에 걸친 모든 일정
+    const rangeSchedules = schedules.filter((s) => inRange(date, s));
+    
+    
+    return (
+      <div className="tile-container">
+        {/* 기간 하이라이트 바: 겹칠 경우 여러 줄로 쌓이게 */}
+        {rangeSchedules.map((s) => {
+          const start = isStart(date, s);
+          const end = isEnd(date, s);
+
+          let barClass = "range-bar";
+          if (start) barClass += " start";
+          else if (end) barClass += " end";
+          else barClass += " middle";
+
+          return (
+            <div key={`bar-${s.id ?? s.title}-${s.startDate}`} className={barClass} title={s.title}>
+              {start && <span className="range-text">• {s.title}</span>}
+            </div>
+          );
+        })}
+
+
+        {/* 시작일인데 range-bar 위에 텍스트가 너무 좁다면 별도 텍스트 라인을 덧붙일 수 있음
+            지금은 range-bar 안에 range-text로 처리하므로 불필요 */}
+      </div>
+    );
+  }}
+/>
 
 
       <h3>

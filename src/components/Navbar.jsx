@@ -27,6 +27,11 @@ function Navbar(){
         <li className='nav-item'>
           <NavLink to="/home" href="##" className='nav-link'>홈페이지</NavLink>
         </li>
+        {currentUser &&(
+        <li className='nav-item'>
+          <NavLink to="/calendar" href="##" className='nav-link'>캘린더</NavLink>
+        </li>
+        )}
       </div>
       {!currentUser &&(
         <div className='navbar-nav ms-auto me-5'>
