@@ -73,7 +73,9 @@
   position: relative;
   border-radius: 0;
   box-sizing: border-box;
-  z-index: 1;
+  min-height: 20px;              /* ← 높이 지정 */
+  background: rgba(0,128,255,0.25); /* ← 기본 배경 */
+
 }
 
 
@@ -86,6 +88,7 @@
 }
 
 .range-bar.end {
+  background: rgba(0,128,255,0.25);
   border-right: 1px solid rgba(0, 128, 255, 0.35);
   border-top-right-radius: 10px;
   border-bottom-right-radius: 10px;
@@ -94,9 +97,10 @@
 /* 중간(이어지는) 바: 좌우 보더 없이 매끈하게 이어지게 할 수도 있음 */
 .range-bar.middle {
   border-radius: 0;
-
 }
-
+.range-bar.empty {
+  background: transparent; /* 빈 줄은 공간만 차지 */
+}
 /* 텍스트는 바 안에 배치 */
 .range-text {
   position: relative;
@@ -108,11 +112,15 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
+.track-row {
+  display: flex;
+  flex-direction: row;
+  gap: 2px;
+}
 
 /* 겹치는 일정 시 보기 좋게 층을 나눔 */
-.tile-container .range-bar {
+/* .tile-container .range-bar {
   z-index: 1;
-}
+} */
 
 

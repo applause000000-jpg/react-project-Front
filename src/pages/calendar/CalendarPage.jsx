@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Calendar from "react-calendar";
 import axios from "axios";
 import "react-calendar/dist/Calendar.css";
 import { BASE_API_URL } from "../../common/constants";
 import './CalendarPage.css'
+import assignTracks from "./track";
 
 function CalendarPage() {
   // react-calendar에서 range 선택을 위해 배열로 관리
@@ -12,9 +13,26 @@ function CalendarPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [error, setError] = useState("");
+  const [startTime, setStartTime] = useState(""); 
+  const [endTime, setEndTime] = useState(""); 
+  const [mode, setMode] = useState(false);
 
   const startDate = range?.[0] ?? null;
   const endDate = range?.[1] ?? null;
+  const startDateTime = new Date(startDate);
+  if (startTime) {
+    const [h, m] = startTime.split(":");
+    startDateTime.setHours(h, m);
+  }
+
+  const endDateTime = new Date(endDate);
+  if (endTime) {
+    const [h, m] = endTime.split(":");
+    endDateTime.setHours(h, m);
+  }
+
+
+
   const token = localStorage.getItem("token");
   // 선택한 월의 일정 불러오기
   useEffect(() => {
@@ -56,15 +74,15 @@ function CalendarPage() {
 
     try {
       const username = localStorage.getItem("username");
-      console.log(username,token)
+      // console.log(username,token)
       await axios.post(
         BASE_API_URL+"/api/schedules",
         {
           username: username,
           title,
           description,
-          startDate: startDate.toISOString(),
-          endDate: endDate.toISOString(),
+          startDate: startDateTime.toISOString(),
+          endDate: endDateTime.toISOString(),
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -78,10 +96,7 @@ function CalendarPage() {
     }
   };
 
-  // const isSameDay = (d1, d2) =>
-  //   d1.getFullYear() === d2.getFullYear() &&
-  //   d1.getMonth() === d2.getMonth() &&
-  //   d1.getDate() === d2.getDate();
+
 
 
 const toDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -98,64 +113,51 @@ const inRange = (date, s) => {
 const isStart = (date, s) => isSameDay(toDay(date), toDay(new Date(s.startDate)));
 const isEnd   = (date, s) => isSameDay(toDay(date), toDay(new Date(s.endDate)));
 
-
+const { tracks, maxTrackCount } = useMemo(() => assignTracks(schedules), [schedules]);
 
 
   return (
     <div className="container">
       <h2>상세 일정 캘린더</h2>
+      <button onClick={() => setMode(true)}>등록 모드</button>
+    <Calendar
+      selectRange value={range}
 
-      {/* range 선택 활성화 */}
-      {/* <Calendar
-      selectRange
+
       onChange={(value) => {
-        setRange(value);
-      }}
-      value={range}
-      tileContent={({ date, view }) => {
-        if (view === "month") {
-          const daySchedules = schedules.filter((s) =>
-            isSameDay(new Date(s.startDate), date)
-          );
-          
-          return (
-            <div className="tile-container">
-              {daySchedules.slice(0, 2).map((s, idx) => (
-                <div className="tile-text"
-                  key={idx}
-                  style={{
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  • {s.title}
-                </div>
-              ))}
-              {daySchedules.length > 2 && (
-                <div>+{daySchedules.length - 2} more</div>
-              )}
-            </div>
-          );
+        if (mode) {
+          // 등록 모드 → 날짜 범위 선택
+          setRange(value);
+        } else {
+          // 기본 모드 → 단일 날짜 클릭 시 모달 띄우기
+          if (Array.isArray(value)) {
+            // range 모드가 아니면 value가 배열이 아닐 수 있음
+            openModalForDate(value[0]);
+          } else {
+            openModalForDate(value);
+          }
         }
       }}
-    /> */}
 
-<Calendar
-  selectRange
-  onChange={(value) => setRange(value)}
-  value={range}
-  tileContent={({ date, view }) => {
-    if (view !== "month") return null;
+      // onChange={(value) => setRange(value)}
+      
+      tileContent={({ date, view }) => {
+        if (view !== "month") return null;
 
-    // 해당 날짜에 걸친 모든 일정
-    const rangeSchedules = schedules.filter((s) => inRange(date, s));
-    
-    
-    return (
-      <div className="tile-container">
-        {/* 기간 하이라이트 바: 겹칠 경우 여러 줄로 쌓이게 */}
-        {rangeSchedules.map((s) => {
+        
+        
+        const rows = Array.from({ length: maxTrackCount }, (_, trackIdx) => {
+          // 이 트랙에서 오늘 날짜에 걸친 일정 하나 찾기
+          const s = tracks[trackIdx].find((item) => inRange(date, item));
+          if (!s) {
+            // 빈 줄도 렌더링해서 줄 위치 "고정"
+            return (
+              <div className="track-row" key={`row-${trackIdx}`}>
+                <div className="range-bar empty" />
+              </div>
+            );
+          }
+
           const start = isStart(date, s);
           const end = isEnd(date, s);
 
@@ -165,19 +167,21 @@ const isEnd   = (date, s) => isSameDay(toDay(date), toDay(new Date(s.endDate)));
           else barClass += " middle";
 
           return (
-            <div key={`bar-${s.id ?? s.title}-${s.startDate}`} className={barClass} title={s.title}>
-              {start && <span className="range-text">• {s.title}</span>}
+            <div className="track-row" key={`row-${trackIdx}`}>
+              <div className={barClass} title={s.title}>
+                {start && <span className="range-text">• {s.title}</span>}
+              </div>
             </div>
           );
-        })}
+        });
+
+        return <div className="tile-container">{rows}</div>;
+    
 
 
-        {/* 시작일인데 range-bar 위에 텍스트가 너무 좁다면 별도 텍스트 라인을 덧붙일 수 있음
-            지금은 range-bar 안에 range-text로 처리하므로 불필요 */}
-      </div>
-    );
-  }}
-/>
+
+      }}
+    />
 
 
       <h3>
@@ -187,6 +191,29 @@ const isEnd   = (date, s) => isSameDay(toDay(date), toDay(new Date(s.endDate)));
       </h3>
 
       {error && <p style={{ color: "red" }}>{error}</p>}
+
+      {startDate && endDate && (
+        <div className="time-inputs">
+          <label>
+            시작 시간:
+            <input
+              type="time"
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+            />
+          </label>
+          <label>
+            종료 시간:
+            <input
+              type="time"
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
+            />
+          </label>
+        </div>
+      )}
+
+      
 
       <div>
         <input
