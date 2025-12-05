@@ -16,6 +16,10 @@ function CalendarPage() {
   const [startTime, setStartTime] = useState(""); 
   const [endTime, setEndTime] = useState(""); 
   const [mode, setMode] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [daySchedules, setDaySchedules] = useState("");
 
   const startDate = range?.[0] ?? null;
   const endDate = range?.[1] ?? null;
@@ -30,7 +34,6 @@ function CalendarPage() {
     const [h, m] = endTime.split(":");
     endDateTime.setHours(h, m);
   }
-
 
 
   const token = localStorage.getItem("token");
@@ -53,6 +56,22 @@ function CalendarPage() {
     };
     fetchSchedules();
   }, [startDate]);
+
+  function openModalForDate(date) {
+      setSelectedDate(date);
+      const daySchedules = schedules.filter(
+        (s) => {
+          const start = new Date(s.startDate);
+          const end = new Date(s.endDate);
+          // 날짜 범위 안에 포함되는지 확인
+          return date >= start && date <= end;
+        }
+      );
+      setDaySchedules(daySchedules);
+      setShowDetailModal(true);
+    }
+
+
 
   // 일정 등록
   const handleRegister = async () => {
@@ -99,136 +118,161 @@ function CalendarPage() {
 
 
 
-const toDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const toDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
 
-const isSameDay = (a, b) => toDay(a).getTime() === toDay(b).getTime();
+  const isSameDay = (a, b) => toDay(a).getTime() === toDay(b).getTime();
 
-const inRange = (date, s) => {
-  const d = toDay(date);
-  const start = toDay(new Date(s.startDate));
-  const end = toDay(new Date(s.endDate));
-  return d >= start && d <= end;
-};
+  const inRange = (date, s) => {
+    const d = toDay(date);
+    const start = toDay(new Date(s.startDate));
+    const end = toDay(new Date(s.endDate));
+    return d >= start && d <= end;
+  };
 
-const isStart = (date, s) => isSameDay(toDay(date), toDay(new Date(s.startDate)));
-const isEnd   = (date, s) => isSameDay(toDay(date), toDay(new Date(s.endDate)));
+  const isStart = (date, s) => isSameDay(toDay(date), toDay(new Date(s.startDate)));
+  const isEnd   = (date, s) => isSameDay(toDay(date), toDay(new Date(s.endDate)));
 
-const { tracks, maxTrackCount } = useMemo(() => assignTracks(schedules), [schedules]);
+  const { tracks, maxTrackCount } = useMemo(() => assignTracks(schedules), [schedules]);
 
 
   return (
     <div className="container">
       <h2>상세 일정 캘린더</h2>
-      <button onClick={() => setMode(true)}>등록 모드</button>
-    <Calendar
-      selectRange value={range}
-
-
-      onChange={(value) => {
-        if (mode) {
-          // 등록 모드 → 날짜 범위 선택
-          setRange(value);
-        } else {
-          // 기본 모드 → 단일 날짜 클릭 시 모달 띄우기
-          if (Array.isArray(value)) {
-            // range 모드가 아니면 value가 배열이 아닐 수 있음
-            openModalForDate(value[0]);
+      <button onClick={() => {setMode(!mode); setRange(null)}}>
+        {mode ? "상세보기 모드로 전환" : "등록 모드로 전환"}
+      </button> 
+      <Calendar
+        selectRange={mode}
+        value={range}
+        onChange={(value) => {
+          if (mode) {
+            // 등록 모드 → 날짜 범위 선택
+            setRange(value);
+            setShowRegisterModal(true);
           } else {
-            openModalForDate(value);
+            // 기본 모드 → 단일 날짜 클릭 시 모달 띄우기
+            if (Array.isArray(value)) {
+              openModalForDate(value[0]);
+            } else {
+              openModalForDate(value);
+            }
           }
-        }
-      }}
+        }}
 
-      // onChange={(value) => setRange(value)}
-      
-      tileContent={({ date, view }) => {
-        if (view !== "month") return null;
+        // onChange={(value) => setRange(value)}
+        
+        tileContent={({ date, view }) => {
+          if (view !== "month") return null;
 
-        
-        
-        const rows = Array.from({ length: maxTrackCount }, (_, trackIdx) => {
-          // 이 트랙에서 오늘 날짜에 걸친 일정 하나 찾기
-          const s = tracks[trackIdx].find((item) => inRange(date, item));
-          if (!s) {
-            // 빈 줄도 렌더링해서 줄 위치 "고정"
+          
+          
+          const rows = Array.from({ length: maxTrackCount }, (_, trackIdx) => {
+            // 이 트랙에서 오늘 날짜에 걸친 일정 하나 찾기
+            const s = tracks[trackIdx].find((item) => inRange(date, item));
+            if (!s) {
+              // 빈 줄도 렌더링해서 줄 위치 "고정"
+              return (
+                <div className="track-row" key={`row-${trackIdx}`}>
+                  <div className="range-bar empty" />
+                </div>
+              );
+            }
+
+            const start = isStart(date, s);
+            const end = isEnd(date, s);
+
+            let barClass = "range-bar";
+            if (start) barClass += " start";
+            else if (end) barClass += " end";
+            else barClass += " middle";
+
             return (
               <div className="track-row" key={`row-${trackIdx}`}>
-                <div className="range-bar empty" />
+                <div className={barClass} title={s.title}>
+                  {start && <span className="range-text">• {s.title}</span>}
+                </div>
               </div>
             );
-          }
+          });
 
-          const start = isStart(date, s);
-          const end = isEnd(date, s);
+          return <div className="tile-container">{rows}</div>;
+        }}
+      />
 
-          let barClass = "range-bar";
-          if (start) barClass += " start";
-          else if (end) barClass += " end";
-          else barClass += " middle";
+      {/* 모달창 제작 */}
+      {showDetailModal && (
+        <div className="modal">
+          <div className="modal-content">
+            <h3>선택된 날짜</h3>
+            <p>{selectedDate?.toLocaleDateString()}</p>
+            {daySchedules.length > 0 ? (
+              <ul>
+                {daySchedules.map((s) => (
+                  <li key={s.id}>
+                    <strong>{s.title}</strong> ({new Date(s.startDate).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
+                    ~ {new Date(s.endDate).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})})
+                    <p>{s.description}</p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>등록된 일정이 없습니다.</p>
+            )}
 
-          return (
-            <div className="track-row" key={`row-${trackIdx}`}>
-              <div className={barClass} title={s.title}>
-                {start && <span className="range-text">• {s.title}</span>}
-              </div>
-            </div>
-          );
-        });
-
-        return <div className="tile-container">{rows}</div>;
-    
-
-
-
-      }}
-    />
-
-
-      <h3>
-        선택한 범위:{" "}
-        {startDate ? startDate.toLocaleDateString() : "-"} ~{" "}
-        {endDate ? endDate.toLocaleDateString() : "-"}
-      </h3>
-
-      {error && <p style={{ color: "red" }}>{error}</p>}
-
-      {startDate && endDate && (
-        <div className="time-inputs">
-          <label>
-            시작 시간:
-            <input
-              type="time"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-            />
-          </label>
-          <label>
-            종료 시간:
-            <input
-              type="time"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-            />
-          </label>
+            <button onClick={() => {setShowDetailModal(false); setRange(null)}}>닫기</button>
+          </div>
         </div>
       )}
+      {showRegisterModal &&(
+      <div className="modal">
+        <div className="modal-content">
+          <h3>
+            선택한 범위:{" "}
+            {startDate ? startDate.toLocaleDateString() : "-"} ~{" "}
+            {endDate ? endDate.toLocaleDateString() : "-"}
+          </h3>
 
-      
+          {error && <p style={{ color: "red" }}>{error}</p>}
 
-      <div>
-        <input
-          type="text"
-          placeholder="일정 제목"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-        <textarea
-          placeholder="일정 설명"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-        <button onClick={handleRegister}>일정 등록</button>
-      </div>
+          {startDate && endDate && (
+            <div className="time-inputs">
+              <label>
+                시작 시간:
+                <input
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                />
+              </label>
+              <label>
+                종료 시간:
+                <input
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                />
+              </label>
+            </div>
+          )}
+
+          <div>
+            <input
+              type="text"
+              placeholder="일정 제목"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+            <textarea
+              placeholder="일정 설명"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+            <button onClick={handleRegister}>일정 등록</button>
+          </div>
+          <button onClick={() => {setShowRegisterModal(false); setRange(null)}}>닫기</button>
+        </div>
+       </div>
+      )}
 
       <div style={{ marginTop: "20px" }}>
         <h3>이번 달 일정 목록</h3>
