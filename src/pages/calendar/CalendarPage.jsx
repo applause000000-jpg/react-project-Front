@@ -70,6 +70,10 @@ function CalendarPage() {
       setDaySchedules(daySchedules);
       setShowDetailModal(true);
     }
+  function getColorFromId(id) {
+    const colors = ["#FF6B6B","#429ee9ff", "#4ECDC4", "#FFD93D", "#FF9F1C"];
+    return colors[id % colors.length]; // id를 기준으로 색상 고정
+  }
 
 
 
@@ -164,13 +168,14 @@ function CalendarPage() {
         tileContent={({ date, view }) => {
           if (view !== "month") return null;
 
-          
-          
+          // 날짜별 전체 일정 개수 (화살표 표시용)
+          const totalCountForDate = tracks
+            .flatMap((track) => track.filter((item) => inRange(date, item))).length;
+
+          // 트랙 고정: 항상 maxTrackCount 줄을 만들되, 출력은 최대 3줄까지만
           const rows = Array.from({ length: maxTrackCount }, (_, trackIdx) => {
-            // 이 트랙에서 오늘 날짜에 걸친 일정 하나 찾기
-            const s = tracks[trackIdx].find((item) => inRange(date, item));
+            const s = tracks[trackIdx]?.find((item) => inRange(date, item));
             if (!s) {
-              // 빈 줄도 렌더링해서 줄 위치 "고정"
               return (
                 <div className="track-row" key={`row-${trackIdx}`}>
                   <div className="range-bar empty" />
@@ -188,15 +193,28 @@ function CalendarPage() {
 
             return (
               <div className="track-row" key={`row-${trackIdx}`}>
-                <div className={barClass} title={s.title}>
-                  {start && <span className="range-text">• {s.title}</span>}
+                <div className={barClass}  title={s.title} style={{ backgroundColor: getColorFromId(s.id) }}>
+                  {start && <span className="range-text" style={{ color: getColorFromId(s.id) }}>• {s.title}</span>}
                 </div>
               </div>
             );
-          });
+          }).slice(0, 3);
 
-          return <div className="tile-container">{rows}</div>;
+          return (
+            <div className="tile-container">
+              {rows}
+              {totalCountForDate > 3 && (
+                <div className="track-row">
+                  <span className="more-indicator">▼</span>
+                </div>
+              )}
+            </div>
+          );
         }}
+
+
+
+
       />
 
       {/* 모달창 제작 */}
