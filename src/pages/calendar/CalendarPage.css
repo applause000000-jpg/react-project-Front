@@ -89,7 +89,7 @@
 
 .range-bar.end {
   /* background: rgba(0,128,255,0.25); */
-  border-right: 1px solid rgba(0, 128, 255, 0.35);
+  /* border-right: 1px solid rgba(0, 128, 255, 0.35); */
   border-top-right-radius: 10px;
   border-bottom-right-radius: 10px;
 }
@@ -101,6 +101,17 @@
 .range-bar.empty {
   background: transparent; /* 빈 줄은 공간만 차지 */
 }
+
+.range-bar.single {
+  display: inline-block;
+  border-radius: 12px;
+  padding: 0 6px;
+  height: auto;
+  line-height: 1.5;
+}
+
+
+
 /* 텍스트는 바 안에 배치 */
 .range-text {
   position: relative;

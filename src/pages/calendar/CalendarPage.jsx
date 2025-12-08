@@ -58,20 +58,26 @@ function CalendarPage() {
   }, [startDate]);
 
   function openModalForDate(date) {
-      setSelectedDate(date);
-      const daySchedules = schedules.filter(
-        (s) => {
-          const start = new Date(s.startDate);
-          const end = new Date(s.endDate);
-          // 날짜 범위 안에 포함되는지 확인
-          return date >= start && date <= end;
-        }
-      );
-      setDaySchedules(daySchedules);
-      setShowDetailModal(true);
-    }
+    setSelectedDate(date);
+    const selectedDay = new Date(date);
+    selectedDay.setHours(0, 0, 0, 0);
+
+    const daySchedules = schedules.filter((s) => {
+      const start = new Date(s.startDate);
+      const end = new Date(s.endDate);
+
+      start.setHours(0, 0, 0, 0);
+      end.setHours(0, 0, 0, 0);
+
+      return selectedDay >= start && selectedDay <= end;
+    });
+
+    setDaySchedules(daySchedules);
+    setShowDetailModal(true);
+  }
+
   function getColorFromId(id) {
-    const colors = ["#FF6B6B","#429ee9ff", "#4ECDC4", "#FFD93D", "#FF9F1C"];
+    const colors = ["#ee8b8bff","#72baf5ff", "#64c4bdff", "#dde47dff", "#eeaa4bff"];
     return colors[id % colors.length]; // id를 기준으로 색상 고정
   }
 
@@ -186,10 +192,24 @@ function CalendarPage() {
             const start = isStart(date, s);
             const end = isEnd(date, s);
 
+            // 당일 일정의 경우 1칸짜리 일정만들기 위해서 작성
+            const startDate = new Date(s.startDate);
+            const endDate = new Date(s.endDate);
+            startDate.setHours(0,0,0,0);
+            endDate.setHours(0,0,0,0);
+            const isSingleDay = startDate.getTime() === endDate.getTime();
+
             let barClass = "range-bar";
-            if (start) barClass += " start";
-            else if (end) barClass += " end";
-            else barClass += " middle";
+            if (isSingleDay) {
+              barClass += " single";
+            } else if (start) {
+              barClass += " start";
+            } else if (end) {
+              barClass += " end";
+            } else {
+              barClass += " middle";
+            }
+
 
             return (
               <div className="track-row" key={`row-${trackIdx}`}>
@@ -226,11 +246,29 @@ function CalendarPage() {
             {daySchedules.length > 0 ? (
               <ul>
                 {daySchedules.map((s) => (
+                  // <li key={s.id}>
+                  //   <strong>{s.title}</strong> ({new Date(s.startDate).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
+                  //   ~ {new Date(s.endDate).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})})
+                  //   <p>{s.description}</p>
+                  // </li>
                   <li key={s.id}>
-                    <strong>{s.title}</strong> ({new Date(s.startDate).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
-                    ~ {new Date(s.endDate).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})})
+                    <strong>{s.title}</strong>
+                    {barClass.includes("single") && (
+                      <> ({new Date(s.startDate).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
+                      ~ {new Date(s.endDate).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})})</>
+                    )}
+                    {barClass.includes("start") && (
+                      <> ({new Date(s.startDate).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} 시작)</>
+                    )}
+                    {barClass.includes("middle") && (
+                      <> (종일)</>
+                    )}
+                    {barClass.includes("end") && (
+                      <> ({new Date(s.endDate).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} 종료)</>
+                    )}
                     <p>{s.description}</p>
                   </li>
+
                 ))}
               </ul>
             ) : (
