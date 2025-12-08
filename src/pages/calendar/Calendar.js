@@ -1,21 +1,5 @@
-// export default function assignTracks(schedules) {
-//   const tracks = [];
-//   schedules.forEach(s => {
-//     let placed = false;
-//     for (const track of tracks) {
-//       // 이 트랙에 이미 있는 일정들과 겹치지 않으면 배치
-//       if (track.every(t => new Date(s.startDate) > new Date(t.endDate) || new Date(s.endDate) < new Date(t.startDate))) {
-//         track.push(s);
-//         placed = true;
-//         break;
-//       }
-//     }
-//     if (!placed) {
-//       tracks.push([s]); // 새로운 트랙 생성
-//     }
-//   });
-//   return tracks;
-// }
+import { BASE_API_URL } from "../../common/constants";
+
 
 
 export default function assignTracks(schedules) {
@@ -54,6 +38,28 @@ export default function assignTracks(schedules) {
 
   return { tracks, maxTrackCount: tracks.length };
 }
+
+export async function deleteSchedule(scheduleId) {
+  try {
+    const response = await fetch(`${BASE_API_URL}/api/schedules/${scheduleId}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      // 실패 알림은 여기서!
+      alert("삭제에 실패했습니다.");
+      return false;
+    }
+
+    return true; // 성공
+  } catch (error) {
+    console.error("삭제 요청 오류:", error);
+    alert("서버 오류가 발생했습니다.");
+    return false;
+  }
+}
+
+
 
 
 

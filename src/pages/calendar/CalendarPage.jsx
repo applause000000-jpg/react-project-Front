@@ -4,7 +4,8 @@ import axios from "axios";
 import "react-calendar/dist/Calendar.css";
 import { BASE_API_URL } from "../../common/constants";
 import './CalendarPage.css'
-import assignTracks from "./track";
+import assignTracks from "./Calendar";
+import {deleteSchedule} from "./Calendar";
 
 function CalendarPage() {
   // react-calendar에서 range 선택을 위해 배열로 관리
@@ -80,6 +81,19 @@ function CalendarPage() {
     const colors = ["#ee8b8bff","#72baf5ff", "#64c4bdff", "#dde47dff", "#eeaa4bff"];
     return colors[id % colors.length]; // id를 기준으로 색상 고정
   }
+  function getDisplayType(date, schedule) {
+    const start = new Date(schedule.startDate);
+    const end = new Date(schedule.endDate);
+
+    const isSingleDay = start.toDateString() === end.toDateString();
+    if (isSingleDay) return "single";
+    if (date.toDateString() === start.toDateString()) return "start";
+    if (date.toDateString() === end.toDateString()) return "end";
+    return "middle";
+  }
+  function formatTime(date) {
+    return new Date(date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
 
 
 
@@ -140,7 +154,7 @@ function CalendarPage() {
   };
 
   const isStart = (date, s) => isSameDay(toDay(date), toDay(new Date(s.startDate)));
-  const isEnd   = (date, s) => isSameDay(toDay(date), toDay(new Date(s.endDate)));
+  // const isEnd   = (date, s) => isSameDay(toDay(date), toDay(new Date(s.endDate)));
 
   const { tracks, maxTrackCount } = useMemo(() => assignTracks(schedules), [schedules]);
 
@@ -190,25 +204,28 @@ function CalendarPage() {
             }
 
             const start = isStart(date, s);
-            const end = isEnd(date, s);
+            // const end = isEnd(date, s);
 
-            // 당일 일정의 경우 1칸짜리 일정만들기 위해서 작성
-            const startDate = new Date(s.startDate);
-            const endDate = new Date(s.endDate);
-            startDate.setHours(0,0,0,0);
-            endDate.setHours(0,0,0,0);
-            const isSingleDay = startDate.getTime() === endDate.getTime();
+            // // 당일 일정의 경우 1칸짜리 일정만들기 위해서 작성
+            // const startDate = new Date(s.startDate);
+            // const endDate = new Date(s.endDate);
+            // startDate.setHours(0,0,0,0);
+            // endDate.setHours(0,0,0,0);
+            // const isSingleDay = startDate.getTime() === endDate.getTime();
 
-            let barClass = "range-bar";
-            if (isSingleDay) {
-              barClass += " single";
-            } else if (start) {
-              barClass += " start";
-            } else if (end) {
-              barClass += " end";
-            } else {
-              barClass += " middle";
-            }
+            // let barClass = "range-bar";
+            // if (isSingleDay) {
+            //   barClass += " single";
+            // } else if (start) {
+            //   barClass += " start";
+            // } else if (end) {
+            //   barClass += " end";
+            // } else {
+            //   barClass += " middle";
+            // }
+            const displayType = getDisplayType(date, s);
+            let barClass = `range-bar ${displayType}`;
+
 
 
             return (
@@ -245,31 +262,50 @@ function CalendarPage() {
             <p>{selectedDate?.toLocaleDateString()}</p>
             {daySchedules.length > 0 ? (
               <ul>
-                {daySchedules.map((s) => (
-                  // <li key={s.id}>
-                  //   <strong>{s.title}</strong> ({new Date(s.startDate).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
-                  //   ~ {new Date(s.endDate).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})})
-                  //   <p>{s.description}</p>
-                  // </li>
+                {/* {daySchedules.map((s) => (
                   <li key={s.id}>
-                    <strong>{s.title}</strong>
-                    {barClass.includes("single") && (
-                      <> ({new Date(s.startDate).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
-                      ~ {new Date(s.endDate).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})})</>
-                    )}
-                    {barClass.includes("start") && (
-                      <> ({new Date(s.startDate).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} 시작)</>
-                    )}
-                    {barClass.includes("middle") && (
-                      <> (종일)</>
-                    )}
-                    {barClass.includes("end") && (
-                      <> ({new Date(s.endDate).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} 종료)</>
-                    )}
+                    <strong>{s.title}</strong> ({new Date(s.startDate).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
+                    ~ {new Date(s.endDate).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})})
                     <p>{s.description}</p>
                   </li>
 
-                ))}
+                ))} */}
+                {daySchedules.map((s) => {
+                  const type = getDisplayType(selectedDate, s);
+                  return (
+                    <li key={s.id} className="schedulesItem">
+                      <div className="schedulesContent">
+                        <h5>{s.title}</h5>{" "}
+                        {type === "single" && (
+                          <> ({formatTime(s.startDate)} ~ {formatTime(s.endDate)})</>
+                        )}
+                        {type === "start" && <> ({formatTime(s.startDate)} 시작)</>}
+                        {type === "middle" && <> (종일)</>}
+                        {type === "end" && <> ({formatTime(s.endDate)} 종료)</>}
+                        <p>{s.description}</p>
+                      </div>
+                      <div className="schedulesBtn">
+                        <button className="btn btn-primary me-1">수정</button>
+                        <button className="btn btn-danger"
+                          onClick={async () => {
+                            if (window.confirm("정말 삭제하시겠습니까?")) {
+                              const success = await deleteSchedule(s.id);
+                              if (success) {
+                                // 성공 시 상태 갱신 + 모달 닫기
+                                setSchedules((prev) => prev.filter((item) => item.id !== s.id));
+                                setDaySchedules((prev) => prev.filter((item) => item.id !== s.id));
+                                setShowDetailModal(false);
+                              }
+                            }
+                          }}
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
+
               </ul>
             ) : (
               <p>등록된 일정이 없습니다.</p>
