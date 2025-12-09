@@ -149,7 +149,7 @@
 }
 
 .modal-content {
-  width: 70%;
+  width: 60%;
   background: #fff;
   padding: 20px;
   border-radius: 8px;
@@ -163,6 +163,21 @@
   font-size: 12px;         /* 크기 조절 (원하는 크기로 변경 가능) */
 }
 
+.closeBtn1 {
+  width: 280px;          /* 버튼 크기를 짧게 */
+  background-color: #eee; /* 은은한 배경 */
+  color: #333;          /* 아이콘/텍스트 색상 */
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+  border-radius: 8px;
+
+}
+.closeBtn:hover {
+  background-color: #ccc; /* 호버 시 배경 변화 */
+}
 
 
 /* 스케쥴 디테일 모달내 css */

@@ -21,6 +21,7 @@ function CalendarPage() {
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [daySchedules, setDaySchedules] = useState("");
+  const [scheid, setScheid] = useState(null);
 
   const startDate = range?.[0] ?? null;
   const endDate = range?.[1] ?? null;
@@ -94,53 +95,87 @@ function CalendarPage() {
   function formatTime(date) {
     return new Date(date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   }
+  function EditTime(date) {
+  const d = new Date(date);
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  return `${hours}:${minutes}`; // 예: "20:30"
+}
 
+const handleEdit = async () => {
+  console.log(title,description,startDateTime.toISOString(),endDateTime.toISOString());
+  if (!startDate || !endDate) {
+    setError("시작 날짜와 끝나는 날짜를 모두 선택해 주세요.");
+    return;
+  }
+  if (startDate > endDate) {
+    setError("시작 날짜가 끝나는 날짜보다 늦을 수 없습니다.");
+    return;
+  }
+  if (!title.trim()) {
+    setError("일정 제목을 입력해 주세요.");
+    return;
+  }
+  try {
+    const username = localStorage.getItem("username");
+    await axios.put(
+      BASE_API_URL+"/api/schedules/"+scheid,
+      {
+        username: username,
+        title,
+        description,
+        startDate: startDateTime.toISOString(),
+        endDate: endDateTime.toISOString(),
+      },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
+    alert("일정 수정 완료");
+    setTitle("");
+    setDescription("");
+  } catch (err) {
+    console.error(err);
+    alert("등록 실패");
+  }
+}
 
-  // 일정 등록
-  const handleRegister = async () => {
-    setError("");
+const handleRegister = async () => {
+  setError("");
+  if (!startDate || !endDate) {
+    setError("시작 날짜와 끝나는 날짜를 모두 선택해 주세요.");
+    return;
+  }
+  if (startDate > endDate) {
+    setError("시작 날짜가 끝나는 날짜보다 늦을 수 없습니다.");
+    return;
+  }
+  if (!title.trim()) {
+    setError("일정 제목을 입력해 주세요.");
+    return;
+  }
+  try {
+    const username = localStorage.getItem("username");
+    // console.log(username,token)
+    await axios.post(
+      BASE_API_URL+"/api/schedules",
+      {
+        username: username,
+        title,
+        description,
+        startDate: startDateTime.toISOString(),
+        endDate: endDateTime.toISOString(),
+      },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-    // 검증
-    if (!startDate || !endDate) {
-      setError("시작 날짜와 끝나는 날짜를 모두 선택해 주세요.");
-      return;
-    }
-    if (startDate > endDate) {
-      setError("시작 날짜가 끝나는 날짜보다 늦을 수 없습니다.");
-      return;
-    }
-    if (!title.trim()) {
-      setError("일정 제목을 입력해 주세요.");
-      return;
-    }
-
-    try {
-      const username = localStorage.getItem("username");
-      // console.log(username,token)
-      await axios.post(
-        BASE_API_URL+"/api/schedules",
-        {
-          username: username,
-          title,
-          description,
-          startDate: startDateTime.toISOString(),
-          endDate: endDateTime.toISOString(),
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      alert("일정 등록 완료");
-      setTitle("");
-      setDescription("");
-    } catch (err) {
-      console.error(err);
-      alert("등록 실패");
-    }
-  };
-
-
-
+    alert("일정 등록 완료");
+    setTitle("");
+    setDescription("");
+  } catch (err) {
+    console.error(err);
+    alert("등록 실패");
+  }
+};
 
   const toDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
 
@@ -202,31 +237,9 @@ function CalendarPage() {
                 </div>
               );
             }
-
             const start = isStart(date, s);
-            // const end = isEnd(date, s);
-
-            // // 당일 일정의 경우 1칸짜리 일정만들기 위해서 작성
-            // const startDate = new Date(s.startDate);
-            // const endDate = new Date(s.endDate);
-            // startDate.setHours(0,0,0,0);
-            // endDate.setHours(0,0,0,0);
-            // const isSingleDay = startDate.getTime() === endDate.getTime();
-
-            // let barClass = "range-bar";
-            // if (isSingleDay) {
-            //   barClass += " single";
-            // } else if (start) {
-            //   barClass += " start";
-            // } else if (end) {
-            //   barClass += " end";
-            // } else {
-            //   barClass += " middle";
-            // }
             const displayType = getDisplayType(date, s);
             let barClass = `range-bar ${displayType}`;
-
-
 
             return (
               <div className="track-row" key={`row-${trackIdx}`}>
@@ -249,9 +262,6 @@ function CalendarPage() {
           );
         }}
 
-
-
-
       />
 
       {/* 모달창 제작 */}
@@ -262,14 +272,6 @@ function CalendarPage() {
             <p>{selectedDate?.toLocaleDateString()}</p>
             {daySchedules.length > 0 ? (
               <ul>
-                {/* {daySchedules.map((s) => (
-                  <li key={s.id}>
-                    <strong>{s.title}</strong> ({new Date(s.startDate).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
-                    ~ {new Date(s.endDate).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})})
-                    <p>{s.description}</p>
-                  </li>
-
-                ))} */}
                 {daySchedules.map((s) => {
                   const type = getDisplayType(selectedDate, s);
                   return (
@@ -285,7 +287,21 @@ function CalendarPage() {
                         <p>{s.description}</p>
                       </div>
                       <div className="schedulesBtn">
-                        <button className="btn btn-primary me-1">수정</button>
+                        <button className="btn btn-primary me-1"
+                        onClick={() => {
+                          setShowDetailModal(false);   // 디테일 모달 닫기
+                          setShowRegisterModal(true);  // 등록 모달 열기
+
+                          // 선택된 일정 데이터 주입
+                          setScheid(s.id);
+                          setTitle(s.title);
+                          setDescription(s.description);
+                          setStartTime(EditTime(s.startDate));
+                          setEndTime(EditTime(s.endDate));
+                          setRange([new Date(s.startDate), new Date(s.endDate)]);
+                        }}
+                          >
+                          수정</button>
                         <button className="btn btn-danger"
                           onClick={async () => {
                             if (window.confirm("정말 삭제하시겠습니까?")) {
@@ -305,24 +321,42 @@ function CalendarPage() {
                     </li>
                   );
                 })}
-
               </ul>
             ) : (
               <p>등록된 일정이 없습니다.</p>
             )}
-
-            <button onClick={() => {setShowDetailModal(false); setRange(null)}}>닫기</button>
+            <button onClick={() => {setShowDetailModal(false); setRange(null)}}
+              >닫기</button>
           </div>
         </div>
       )}
       {showRegisterModal &&(
       <div className="modal">
         <div className="modal-content">
+          {!mode &&
+          <input
+            type="date"
+            value={startDate.toISOString().slice(0, 10)} // YYYY-MM-DD 형태
+            onChange={(e) => {
+              const newStart = new Date(e.target.value);
+              setRange([newStart, range?.[1] ?? null]); // 배열 0번 값 갱신
+            }}
+          />}
+          {!mode &&
+          <input
+            type="date"
+            value={endDate.toISOString().slice(0, 10)} // YYYY-MM-DD 형태
+            onChange={(e) => {
+              const newEnd = new Date(e.target.value);
+              setRange([range?.[0] ?? null, newEnd]); // 배열 1번 값 갱신
+            }}
+          />}
+          {mode &&
           <h3>
             선택한 범위:{" "}
             {startDate ? startDate.toLocaleDateString() : "-"} ~{" "}
             {endDate ? endDate.toLocaleDateString() : "-"}
-          </h3>
+          </h3>}
 
           {error && <p style={{ color: "red" }}>{error}</p>}
 
@@ -359,9 +393,19 @@ function CalendarPage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
+            {!mode &&
+              <button onClick={handleEdit}>일정 수정</button>
+            }
+            {mode &&
             <button onClick={handleRegister}>일정 등록</button>
+            }
+
+
+
+
           </div>
-          <button onClick={() => {setShowRegisterModal(false); setRange(null)}}>닫기</button>
+          <button onClick={() => {setShowRegisterModal(false); setRange(null)}}
+            className="closeBtn">닫기</button>
         </div>
        </div>
       )}
