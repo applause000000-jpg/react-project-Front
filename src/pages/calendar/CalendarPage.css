@@ -115,7 +115,7 @@
 /* 텍스트는 바 안에 배치 */
 .range-text {
   position: relative;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   color: #000000 !important;
   padding-left: 4px;
@@ -149,11 +149,11 @@
 }
 
 .modal-content {
-  width: 60%;
+  width: 40%;
   background: #fff;
   padding: 20px;
   border-radius: 8px;
-  min-width: 300px;
+  min-width: 300px;;
 }
 
 .more-indicator{
@@ -219,4 +219,9 @@
   margin-left: 5px; /* 버튼 간격 */
 }
 
-
+.date-inputs{
+  justify-content: center;
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}

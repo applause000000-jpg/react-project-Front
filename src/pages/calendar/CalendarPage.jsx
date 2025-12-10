@@ -79,7 +79,18 @@ function CalendarPage() {
   }
 
   function getColorFromId(id) {
-    const colors = ["#ee8b8bff","#72baf5ff", "#64c4bdff", "#dde47dff", "#eeaa4bff"];
+    const colors = [
+      "#FFB3BA",
+      "#FFDFBA",
+      "#FFFFBA",
+      "#BAFFC9",
+      "#BAE1FF", 
+      "#D7BAFF",
+      "#FFC4E1",
+      "#C4FFF9", 
+      "#C4FFC4", 
+      "#FFF0C4"  
+    ];
     return colors[id % colors.length]; // id를 기준으로 색상 고정
   }
   function getDisplayType(date, schedule) {
@@ -101,7 +112,14 @@ function CalendarPage() {
   const minutes = String(d.getMinutes()).padStart(2, "0");
   return `${hours}:${minutes}`; // 예: "20:30"
 }
+const resetValues = () => {
+  setTitle("");
+  setDescription("");
+  setStartTime("");
+  setEndTime("");
+  setRange(null,null);
 
+}
 const handleEdit = async () => {
   console.log(title,description,startDateTime.toISOString(),endDateTime.toISOString());
   if (!startDate || !endDate) {
@@ -131,8 +149,8 @@ const handleEdit = async () => {
     );
 
     alert("일정 수정 완료");
-    setTitle("");
-    setDescription("");
+    resetValues();
+    setShowDetailModal(false);
   } catch (err) {
     console.error(err);
     alert("등록 실패");
@@ -169,8 +187,8 @@ const handleRegister = async () => {
     );
 
     alert("일정 등록 완료");
-    setTitle("");
-    setDescription("");
+    resetValues();
+    setShowRegisterModal(false);
   } catch (err) {
     console.error(err);
     alert("등록 실패");
@@ -197,7 +215,7 @@ const handleRegister = async () => {
   return (
     <div className="container">
       <h2>상세 일정 캘린더</h2>
-      <button onClick={() => {setMode(!mode); setRange(null)}}>
+      <button onClick={() => {setMode(!mode); resetValues();}} className="btn btn-secondary mb-3">
         {mode ? "상세보기 모드로 전환" : "등록 모드로 전환"}
       </button> 
       <Calendar
@@ -244,7 +262,7 @@ const handleRegister = async () => {
             return (
               <div className="track-row" key={`row-${trackIdx}`}>
                 <div className={barClass}  title={s.title} style={{ backgroundColor: getColorFromId(s.id) }}>
-                  {start && <span className="range-text" style={{ color: getColorFromId(s.id) }}>• {s.title}</span>}
+                  {start && <span className="range-text" style={{ color: getColorFromId(s.id) }}>{s.title}</span>}
                 </div>
               </div>
             );
@@ -334,6 +352,8 @@ const handleRegister = async () => {
       <div className="modal">
         <div className="modal-content">
           {!mode &&
+          <div className="date-inputs">
+            <h5>선택한 일정 : </h5>
           <input
             type="date"
             value={startDate.toISOString().slice(0, 10)} // YYYY-MM-DD 형태
@@ -341,8 +361,7 @@ const handleRegister = async () => {
               const newStart = new Date(e.target.value);
               setRange([newStart, range?.[1] ?? null]); // 배열 0번 값 갱신
             }}
-          />}
-          {!mode &&
+          />~
           <input
             type="date"
             value={endDate.toISOString().slice(0, 10)} // YYYY-MM-DD 형태
@@ -350,7 +369,9 @@ const handleRegister = async () => {
               const newEnd = new Date(e.target.value);
               setRange([range?.[0] ?? null, newEnd]); // 배열 1번 값 갱신
             }}
-          />}
+          />
+          </div>
+          }
           {mode &&
           <h3>
             선택한 범위:{" "}
@@ -371,7 +392,7 @@ const handleRegister = async () => {
                 />
               </label>
               <label>
-                종료 시간:
+                ~ 종료 시간:
                 <input
                   type="time"
                   value={endTime}
@@ -380,31 +401,33 @@ const handleRegister = async () => {
               </label>
             </div>
           )}
-
-          <div>
-            <input
-              type="text"
+          <div class="mb-3">
+            <label class="form-label">제목</label>
+            <input type="text" class="form-control"
               placeholder="일정 제목"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
+              onChange={(e) => setTitle(e.target.value)}/>
+          </div>
+          
+          <div className="mb-3">
+            <label className="form-label">일정 설명</label>
+            <br/>
             <textarea
+              className="form-control"
               placeholder="일정 설명"
+              rows="4"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-            />
+            /><br/>
             {!mode &&
-              <button onClick={handleEdit}>일정 수정</button>
+              <button onClick={handleEdit} className="btn btn-success">일정 수정</button>
             }
             {mode &&
-            <button onClick={handleRegister}>일정 등록</button>
+            <button onClick={handleRegister} className="btn btn-success">일정 등록</button>
             }
-
-
-
-
+          
           </div>
-          <button onClick={() => {setShowRegisterModal(false); setRange(null)}}
+          <button onClick={() => {setShowRegisterModal(false); resetValues();}}
             className="closeBtn">닫기</button>
         </div>
        </div>

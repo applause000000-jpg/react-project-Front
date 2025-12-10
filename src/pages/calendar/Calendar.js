@@ -1,5 +1,9 @@
 import { BASE_API_URL } from "../../common/constants";
 
+function toDateOnly(d) {
+  const date = new Date(d);
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate()); 
+}
 
 
 export default function assignTracks(schedules) {
@@ -15,10 +19,10 @@ export default function assignTracks(schedules) {
       const track = tracks[i];
       // 이 트랙에 있는 어떤 일정과도 겹치지 않으면 배치
       const overlaps = track.some((t) => {
-        const sStart = new Date(s.startDate);
-        const sEnd = new Date(s.endDate);
-        const tStart = new Date(t.startDate);
-        const tEnd = new Date(t.endDate);
+        const sStart = toDateOnly(s.startDate);
+        const sEnd = toDateOnly(s.endDate);
+        const tStart = toDateOnly(t.startDate);
+        const tEnd = toDateOnly(t.endDate);
         // 겹침 조건: sStart <= tEnd && sEnd >= tStart
         return sStart <= tEnd && sEnd >= tStart;
       });
