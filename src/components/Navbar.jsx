@@ -1,6 +1,6 @@
 
 import { NavLink, useNavigate } from 'react-router-dom';
-import logo from '../assets/react.svg'
+import logo from '../assets/calendar-icon.png'
 import useUserStore from '../store/useUserStore';
 import { Role } from '../models/Role';
 import './Navbar.css'
@@ -14,9 +14,9 @@ function Navbar(){
   }
   return(
     <nav className="navbar navbar-expand navbar-dark bg-dark">
-      <a href="http://ko.react.dev/" className="navbar-brand ms-1">
+      <a href="/calendar" className="navbar-brand ms-1">
         <img src={logo} className="App-logo" alt="logo" />
-        <img src="/vite.svg" className="App-logo" alt="logo" />
+        {/* <img src="/vite.svg" className="App-logo" alt="logo" /> */}
       </a>
       <div className='navbar-nav me-auto'>
         {currentUser?.role===Role.ADMIN && (

@@ -47,8 +47,6 @@ function CalendarPage() {
         const res = await axios.get(`${BASE_API_URL}/api/schedules`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        console.log(res.data);
-        console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
         const data = Array.isArray(res.data) ? res.data : [];
         setSchedules(data);
       } catch (err) {
@@ -82,7 +80,6 @@ function CalendarPage() {
     const colors = [
       "#FFB3BA",
       "#FFDFBA",
-      "#FFFFBA",
       "#BAFFC9",
       "#BAE1FF", 
       "#D7BAFF",
@@ -121,7 +118,7 @@ const resetValues = () => {
 
 }
 const handleEdit = async () => {
-  console.log(title,description,startDateTime.toISOString(),endDateTime.toISOString());
+  // console.log(title,description,startDateTime.toISOString(),endDateTime.toISOString());
   if (!startDate || !endDate) {
     setError("시작 날짜와 끝나는 날짜를 모두 선택해 주세요.");
     return;
@@ -151,6 +148,7 @@ const handleEdit = async () => {
     alert("일정 수정 완료");
     resetValues();
     setShowDetailModal(false);
+    window.location.reload();
   } catch (err) {
     console.error(err);
     alert("등록 실패");
@@ -356,7 +354,7 @@ const handleRegister = async () => {
             <h5>선택한 일정 : </h5>
           <input
             type="date"
-            value={startDate.toISOString().slice(0, 10)} // YYYY-MM-DD 형태
+            value={startDate.toLocaleDateString("sv-SE")} 
             onChange={(e) => {
               const newStart = new Date(e.target.value);
               setRange([newStart, range?.[1] ?? null]); // 배열 0번 값 갱신
@@ -364,7 +362,9 @@ const handleRegister = async () => {
           />~
           <input
             type="date"
-            value={endDate.toISOString().slice(0, 10)} // YYYY-MM-DD 형태
+            value={endDate.toLocaleDateString("sv-SE")} 
+
+            // value={endDate.toISOString().slice(0, 10)} // YYYY-MM-DD 형태
             onChange={(e) => {
               const newEnd = new Date(e.target.value);
               setRange([range?.[0] ?? null, newEnd]); // 배열 1번 값 갱신
